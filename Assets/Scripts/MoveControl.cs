@@ -1,8 +1,5 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class MoveControl : MonoBehaviour
 {
@@ -12,6 +9,7 @@ public class MoveControl : MonoBehaviour
     
     [Header("Settings")]
     [SerializeField][Range(1f, 10f)] private float moveSpeed;
+    [SerializeField][Range(5f, 15f)] private float moveRunSpeed;
     [SerializeField][Range(1f, 10f)] private float jumpAmount;
 
     //FSM(finite state machine)에 대한 더 자세한 내용은 세션 3회차에서 배울 것입니다!
@@ -30,6 +28,7 @@ public class MoveControl : MonoBehaviour
     
     private float stateTime;
     private Vector3 forward, right;
+    private bool isNextDoubleJump = false;
 
     private void Start()
     {
@@ -50,6 +49,11 @@ public class MoveControl : MonoBehaviour
         CheckLanded();
         //insert code here...
 
+        if (landed)
+        {
+            isNextDoubleJump = false;
+        }
+
         //1. 스테이트 전환 상황 판단
         if (nextState == State.None) 
         {
@@ -65,9 +69,15 @@ public class MoveControl : MonoBehaviour
                     }
                     break;
                 case State.Jump:
-                    if (landed) 
+                    if (landed && stateTime > 0.12f) //점프 직후 Idle로 오판되는 경우가 있어 대기시간 추가함.
                     {
                         nextState = State.Idle;
+                    }
+                    else if (!isNextDoubleJump && Input.GetKeyDown(KeyCode.Space))
+                    {
+                        // 이단점프
+                        isNextDoubleJump = true;
+                        SetDefaultRigid();
                     }
                     break;
                 //insert code here...
@@ -82,9 +92,10 @@ public class MoveControl : MonoBehaviour
             switch (state) 
             {
                 case State.Jump:
-                    var vel = rigid.linearVelocity;
-                    vel.y = jumpAmount;
-                    rigid.linearVelocity = vel;
+                    if (!isNextDoubleJump)
+                    {
+                        SetDefaultRigid();
+                    }
                     break;
                 //insert code here...
             }
@@ -93,6 +104,13 @@ public class MoveControl : MonoBehaviour
         
         //3. 글로벌 & 스테이트 업데이트
         //insert code here...
+    }
+
+    private void SetDefaultRigid()
+    {
+        var vel = rigid.linearVelocity;
+        vel.y = jumpAmount;
+        rigid.linearVelocity = vel;
     }
 
     private void FixedUpdate()
@@ -118,7 +136,10 @@ public class MoveControl : MonoBehaviour
         if (Input.GetKey(KeyCode.D)) direction += right; //Right
         
         direction.Normalize(); //대각선 이동(Ex. W + A)시에도 동일한 이동속도를 위해 direction을 Normalize
-        
-        transform.Translate( moveSpeed * Time.deltaTime * direction); //Move
+
+        // 어느 방향이던지 Shift 누르면 가속함. W만 가속하려면 조건 추가
+        bool isRunning = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        var speed = isRunning ? moveRunSpeed : moveSpeed;
+        transform.Translate(speed * Time.deltaTime * direction); //Move
     }
 }

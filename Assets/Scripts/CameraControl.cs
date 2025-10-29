@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class CameraControl : MonoBehaviour
@@ -15,6 +13,18 @@ public class CameraControl : MonoBehaviour
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
         playerTransform = transform.parent;
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            sensitivity--;
+        }
+        if (Input.GetKeyDown(KeyCode.F2))
+        {
+            sensitivity++;
+        }
     }
 
     private void FixedUpdate()

@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using Random = UnityEngine.Random;
@@ -13,11 +11,19 @@ public class Enemy : MonoBehaviour
     
     [Header("Settings")]
     [SerializeField] private float attackRange;
-    
-    public enum State 
+    [SerializeField] private NavMeshAgent navMeshAgent;
+    [SerializeField][Range(1f, 20f)] private float detectionRange = 10f;
+    [SerializeField][Range(1f, 40f)] private float detectionOutRange = 30f;
+
+    private Vector3 destination;
+    private GameObject targetPlayer;
+
+    public enum State
     {
         None,
         Idle,
+        Walk,
+        Target,
         Attack
     }
     
@@ -26,6 +32,7 @@ public class Enemy : MonoBehaviour
     public State nextState = State.None;
 
     private bool attackDone;
+    private bool detectPlayer;
 
     private void Start()
     { 
@@ -45,6 +52,42 @@ public class Enemy : MonoBehaviour
                     if (Physics.CheckSphere(transform.position, attackRange, 1 << 6, QueryTriggerInteraction.Ignore))
                     {
                         nextState = State.Attack;
+                        targetPlayer = null;
+                    }
+                    else
+                    {
+                        nextState = State.Walk;
+                    }
+                    break;
+                case State.Walk:
+                    if ((this.transform.position.x == destination.x) && (this.transform.position.z == destination.z))
+                    {
+                        nextState = State.Idle;
+                    }
+                    if (detectPlayer == true)
+                    {
+                        nextState = State.Target;
+                        detectPlayer = false;
+                    }
+                    break;
+                case State.Target:
+                    if (targetPlayer == null)
+                    {
+                        nextState = State.Idle;
+                    }
+                    else
+                    {
+                        var dist = Vector3.Distance(transform.position, targetPlayer.transform.position);
+                        if (dist > detectionOutRange)
+                        {
+                            nextState = State.Walk;
+                            targetPlayer = null;
+                        }
+                        else if (dist <= attackRange)
+                        {
+                            nextState = State.Attack;
+                            targetPlayer = null;
+                        }
                     }
                     break;
                 case State.Attack:
@@ -67,6 +110,12 @@ public class Enemy : MonoBehaviour
             {
                 case State.Idle:
                     break;
+                case State.Walk:
+                    Walk();
+                    break;
+                case State.Target:
+                    Target();
+                    break;
                 case State.Attack:
                     Attack();
                     break;
@@ -76,6 +125,38 @@ public class Enemy : MonoBehaviour
         
         //3. 글로벌 & 스테이트 업데이트
         //insert code here...
+        CheckFrontDetection();
+    }
+
+    private void Walk()
+    {
+        animator.SetTrigger("walk");
+        Vector3 randomDirection = Random.insideUnitSphere * 5f;
+        randomDirection.y = 0;
+        destination = transform.position + randomDirection;
+        navMeshAgent.SetDestination(destination);
+    }
+
+    private void Target()
+    {
+        animator.SetTrigger("walk");
+        if (targetPlayer != null)
+            navMeshAgent.SetDestination(targetPlayer.transform.position);
+    }
+
+    private void CheckFrontDetection()
+    {
+        if (state == State.Target && targetPlayer != null)
+        {
+            navMeshAgent.SetDestination(targetPlayer.transform.position);
+        }
+
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, transform.forward, out hit, detectionRange, 1 << 6, QueryTriggerInteraction.Ignore))
+        {
+            targetPlayer = hit.collider.gameObject;
+            detectPlayer = true;
+        }
     }
     
     private void Attack() //현재 공격은 애니메이션만 작동합니다.
