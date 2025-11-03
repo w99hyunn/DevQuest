@@ -9,7 +9,6 @@ public class Bullet : MonoBehaviour
     private float timer;
     private ObjectPool<GameObject> pool;
 
-
     public void SetPool(ObjectPool<GameObject> bulletPool)
     {
         pool = bulletPool;
