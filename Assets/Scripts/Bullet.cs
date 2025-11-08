@@ -33,6 +33,7 @@ public class Bullet : MonoBehaviour
         if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
         {
             ShowVFX();
+            collision.gameObject.GetComponent<Enemy>().TakeDamage(10f);
         }
         ReturnToPool();
     }
