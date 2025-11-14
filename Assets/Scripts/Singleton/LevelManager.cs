@@ -9,7 +9,6 @@ namespace XREAL
     {
         public static event Action<float> FadeIn;
         public static event Action<float> FadeOut;
-        public static LevelManager Instance;
 
         public float fadeDuration = 1.0f;
 
@@ -17,15 +16,6 @@ namespace XREAL
 
         private void Awake()
         {
-            if (Instance == null)
-            {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
 

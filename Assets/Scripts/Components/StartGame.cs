@@ -6,7 +6,7 @@ namespace XREAL
     {
         public void GameStart()
         {
-            LevelManager.Instance.LoadSceneAsync("Assignment_VR_2");
+            Singleton.Level.LoadSceneAsync("Assignment_VR_2");
         }
     }
 }
